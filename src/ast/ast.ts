@@ -138,7 +138,7 @@ export class PrefixExpression implements Expression {
   }
 
   string() {
-    return `(${this.operator}${this.right.string})`;
+    return `(${this.operator}${this.right.string()})`;
   }
 }
 

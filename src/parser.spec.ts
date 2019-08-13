@@ -163,4 +163,33 @@ describe("parser", () => {
       expect(() => testIntegerLiteral(exp.right, rExp)).not.toThrow();
     }
   });
+
+  it("Can detect operator precedence", () => {
+    const assertProgramString = (input: string, assertion: string) => {
+      const lexer = new Lexer(input);
+      const parser = new Parser(lexer);
+      expect(parser.errors).toHaveLength(0);
+      const program = parser.parseProgram();
+      expect(program.string()).toEqual(assertion);
+    };
+
+    assertProgramString("-a * b;", "((-a) * b)");
+    assertProgramString("!-a;", "(!(-a))");
+    assertProgramString("a + b + c;", "((a + b) + c)");
+    assertProgramString("a + b - c;", "((a + b) - c)");
+    assertProgramString("a * b * c;", "((a * b) * c)");
+    assertProgramString("a * b / c;", "((a * b) / c)");
+    assertProgramString("a + b / c;", "(a + (b / c))");
+    assertProgramString(
+      "a + b * c + d / e - f;",
+      "(((a + (b * c)) + (d / e)) - f)"
+    );
+    assertProgramString("3 + 4; -5 * 5;", "(3 + 4)((-5) * 5)");
+    assertProgramString("5 > 4 == 3 < 4;", "((5 > 4) == (3 < 4))");
+    assertProgramString("5 < 4 != 3 > 4;", "((5 < 4) != (3 > 4))");
+    assertProgramString(
+      "3 + 4 * 5 == 3 * 1 + 4 * 5;",
+      "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))"
+    );
+  });
 });

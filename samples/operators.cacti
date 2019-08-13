@@ -1,1 +1,4 @@
 let sum = 5 + 5;
+let product = -a * b;
+let negate = !-a;
+let sum2 = a + b + c;
