@@ -55,7 +55,7 @@ export class Lexer {
         token = { type: TOKEN_TYPE.ASSIGN, literal: this.ch };
       }
     } else if (this.ch === "!") {
-      if (this.peekChar() === "!") {
+      if (this.peekChar() === "=") {
         token = {
           type: TOKEN_TYPE.NOT_EQ,
           literal: this.ch + this.peekChar()
@@ -80,6 +80,14 @@ export class Lexer {
       token = { type: TOKEN_TYPE.RBRACE, literal: this.ch };
     } else if (this.ch === "-") {
       token = { type: TOKEN_TYPE.MINUS, literal: this.ch };
+    } else if (this.ch === "*") {
+      token = { type: TOKEN_TYPE.ASTERISK, literal: this.ch };
+    } else if (this.ch === "/") {
+      token = { type: TOKEN_TYPE.SLASH, literal: this.ch };
+    } else if (this.ch === ">") {
+      token = { type: TOKEN_TYPE.GT, literal: this.ch };
+    } else if (this.ch === "<") {
+      token = { type: TOKEN_TYPE.LT, literal: this.ch };
     } else if (this.ch === undefined) {
       token = { type: TOKEN_TYPE.EOF, literal: "" };
     } else {

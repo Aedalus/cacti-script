@@ -4,7 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "webpack -w"
+  },
+  "bin": {
+    "cacti": "dist/cacti-script.js"
   },
   "keywords": [],
   "author": "",
@@ -13,9 +17,13 @@
     "@types/jest": "^24.0.16",
     "jest": "^24.8.0",
     "ts-jest": "^24.0.2",
-    "typescript": "^3.5.3"
+    "ts-loader": "^6.0.4",
+    "typescript": "^3.5.3",
+    "webpack": "^4.39.1",
+    "webpack-cli": "^3.1.2"
   },
   "dependencies": {
-    "@types/node": "^12.7.1"
+    "@types/node": "^12.7.1",
+    "commander": "^3.0.0"
   }
 }
