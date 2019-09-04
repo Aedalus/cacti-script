@@ -10,7 +10,8 @@ import {
   ExpressionStatement,
   IntegerLiteral,
   PrefixExpression,
-  InfixExpression
+  InfixExpression,
+  Boolean
 } from "./ast/ast";
 
 type prefixParseFn = () => Expression;
@@ -51,6 +52,8 @@ export class Parser {
     this.nextToken();
     this.nextToken();
 
+    this.registerPrefix(TOKEN_TYPE.TRUE, this.parseBoolean.bind(this));
+    this.registerPrefix(TOKEN_TYPE.FALSE, this.parseBoolean.bind(this));
     this.registerPrefix(TOKEN_TYPE.IDENT, this.parseIdentifier.bind(this));
     this.registerPrefix(TOKEN_TYPE.INT, this.parseIntegerLiteral.bind(this));
     this.registerPrefix(TOKEN_TYPE.BANG, this.parsePrefixExpression.bind(this));
@@ -70,6 +73,10 @@ export class Parser {
     this.registerInfix(TOKEN_TYPE.NOT_EQ, this.parseInfixExpression.bind(this));
     this.registerInfix(TOKEN_TYPE.LT, this.parseInfixExpression.bind(this));
     this.registerInfix(TOKEN_TYPE.GT, this.parseInfixExpression.bind(this));
+  }
+
+  parseBoolean(): Expression {
+    return new Boolean(this.curToken, this.curTokenIs(TOKEN_TYPE.TRUE));
   }
 
   parseInfixExpression(left: Expression): Expression {

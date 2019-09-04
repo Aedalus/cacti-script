@@ -1,20 +1,27 @@
 import { Parser } from "./parser";
 import { Lexer } from "./lexer";
-import {
-  LetStatement,
-  ReturnStatement,
-  ExpressionStatement,
-  Identifier,
-  IntegerLiteral,
-  PrefixExpression,
-  InfixExpression,
-  Expression
-} from "./ast/ast";
+import * as AST from "./ast/ast";
 
-function testIntegerLiteral(exp: Expression, value: number) {
-  if (exp instanceof IntegerLiteral == false)
+function testIdentifier(exp: AST.Expression, value: string) {
+  if (exp instanceof AST.Identifier == false)
+    throw new Error("Expression should be an identifier");
+
+  const cast = exp as AST.Identifier;
+  if (cast.value !== value)
+    throw new Error(
+      `Expected ident to have value ${value}. Received ${cast.value}`
+    );
+
+  if (cast.tokenLiteral() !== value) {
+    throw new Error(
+      `Expected tokenLiteral to be ${value}. Got ${cast.tokenLiteral()}`
+    );
+  }
+}
+function testIntegerLiteral(exp: AST.Expression, value: number) {
+  if (exp instanceof AST.IntegerLiteral == false)
     throw new Error("Expression should be an IntegerLiteral");
-  const cast = exp as IntegerLiteral;
+  const cast = exp as AST.IntegerLiteral;
 
   if (cast.value !== value)
     throw new Error(`Expected ${value}, got ${cast.value}`);
@@ -40,9 +47,9 @@ describe("parser", () => {
 
     expect(program).toBeTruthy();
     expect(program.statements).toHaveLength(3);
-    expect(program.statements[0]).toBeInstanceOf(LetStatement);
-    expect(program.statements[1]).toBeInstanceOf(LetStatement);
-    expect(program.statements[2]).toBeInstanceOf(LetStatement);
+    expect(program.statements[0]).toBeInstanceOf(AST.LetStatement);
+    expect(program.statements[1]).toBeInstanceOf(AST.LetStatement);
+    expect(program.statements[2]).toBeInstanceOf(AST.LetStatement);
 
     expect(program.statements[0].tokenLiteral()).toEqual("let");
     expect(program.statements[1].tokenLiteral()).toEqual("let");
@@ -63,9 +70,9 @@ describe("parser", () => {
 
     expect(program.statements).toHaveLength(3);
 
-    expect(program.statements[0]).toBeInstanceOf(ReturnStatement);
-    expect(program.statements[1]).toBeInstanceOf(ReturnStatement);
-    expect(program.statements[2]).toBeInstanceOf(ReturnStatement);
+    expect(program.statements[0]).toBeInstanceOf(AST.ReturnStatement);
+    expect(program.statements[1]).toBeInstanceOf(AST.ReturnStatement);
+    expect(program.statements[2]).toBeInstanceOf(AST.ReturnStatement);
 
     expect(program.statements[0].tokenLiteral()).toEqual("return");
     expect(program.statements[1].tokenLiteral()).toEqual("return");
@@ -80,8 +87,8 @@ describe("parser", () => {
     expect(parser.errors).toHaveLength(0);
 
     expect(program.statements).toHaveLength(1);
-    const stmt = program.statements[0] as ExpressionStatement;
-    const ident = stmt.expression as Identifier;
+    const stmt = program.statements[0] as AST.ExpressionStatement;
+    const ident = stmt.expression as AST.Identifier;
     expect(ident.value).toEqual("foobar");
     expect(ident.tokenLiteral()).toEqual("foobar");
   });
@@ -95,8 +102,8 @@ describe("parser", () => {
 
     expect(program.statements).toHaveLength(1);
 
-    const stmt = program.statements[0] as ExpressionStatement;
-    const literal = stmt.expression as IntegerLiteral;
+    const stmt = program.statements[0] as AST.ExpressionStatement;
+    const literal = stmt.expression as AST.IntegerLiteral;
     expect(literal.value).toEqual(5);
     expect(literal.tokenLiteral()).toEqual("5");
   });
@@ -106,30 +113,79 @@ describe("parser", () => {
       {
         input: "!5;",
         operator: "!",
-        value: 5
+        value: 5,
+        valueType: AST.IntegerLiteral
       },
       {
         input: "-15;",
         operator: "-",
-        value: 15
+        value: 15,
+        valueType: AST.IntegerLiteral
+      },
+      {
+        input: "!true;",
+        operator: "!",
+        value: true,
+        valueType: AST.Boolean
+      },
+      {
+        input: "!false;",
+        operator: "!",
+        value: false,
+        valueType: AST.Boolean
       }
     ];
-    for (let { input, operator, value } of tests) {
+    for (let { input, operator, value, valueType } of tests) {
       const l = new Lexer(input);
       const p = new Parser(l);
       const program = p.parseProgram();
       expect(p.errors).toHaveLength(0);
 
       expect(program.statements).toHaveLength(1);
-      const stmt = program.statements[0] as ExpressionStatement;
-      const exp = stmt.expression as PrefixExpression;
+      const stmt = program.statements[0] as AST.ExpressionStatement;
+      const exp = stmt.expression as AST.PrefixExpression;
       expect(exp.operator).toEqual(operator);
 
-      expect(exp.right).toBeInstanceOf(IntegerLiteral);
-      expect((exp.right as IntegerLiteral).value).toEqual(value);
+      expect(exp.right).toBeInstanceOf(valueType);
+      expect((exp.right as any).value).toEqual(value);
     }
   });
 
+  it("Can detect boolean infix operators", () => {
+    const tests: [string, boolean, string, boolean][] = [
+      ["true == true;", true, "==", true],
+      ["true == false;", true, "==", false],
+      ["true != false;", true, "!=", false]
+    ];
+
+    for (let [input, lExp, op, rExp] of tests) {
+      const lexer = new Lexer(input);
+      const parser = new Parser(lexer);
+      const program = parser.parseProgram();
+      if (parser.errors.length) {
+        console.log(input);
+        expect(parser.errors).toHaveLength(0);
+      }
+
+      expect(program.statements[0]).toBeInstanceOf(AST.ExpressionStatement);
+      const statement = program.statements[0] as AST.ExpressionStatement;
+      expect(statement.expression).toBeInstanceOf(AST.InfixExpression);
+      const infix = statement.expression as AST.InfixExpression;
+
+      expect(infix.left).toBeInstanceOf(AST.Boolean);
+      const left = infix.left as AST.Boolean;
+      expect(left.value).toEqual(lExp);
+
+      expect(infix.operator).toEqual(op);
+
+      expect(infix.right).toBeInstanceOf(AST.Boolean);
+      const right = infix.right as AST.Boolean;
+      expect(right.value).toEqual(rExp);
+      // const { expression } = statement;
+      // const { } = expression;
+      // expect(statement).toEqual("foo");
+    }
+  });
   it("Can detect infix operators", () => {
     const tests: [string, number, string, number][] = [
       ["5 + 5;", 5, "+", 5],
@@ -152,11 +208,11 @@ describe("parser", () => {
         expect(parser.errors).toHaveLength(0);
       }
 
-      expect(program.statements[0]).toBeInstanceOf(ExpressionStatement);
-      const statement = program.statements[0] as ExpressionStatement;
+      expect(program.statements[0]).toBeInstanceOf(AST.ExpressionStatement);
+      const statement = program.statements[0] as AST.ExpressionStatement;
 
-      expect(statement.expression).toBeInstanceOf(InfixExpression);
-      const exp = statement.expression as InfixExpression;
+      expect(statement.expression).toBeInstanceOf(AST.InfixExpression);
+      const exp = statement.expression as AST.InfixExpression;
 
       expect(() => testIntegerLiteral(exp.left, lExp)).not.toThrow();
       expect(exp.operator).toEqual(op);
@@ -172,24 +228,34 @@ describe("parser", () => {
       const program = parser.parseProgram();
       expect(program.string()).toEqual(assertion);
     };
+    const programStrings: [string, string][] = [
+      ["-a * b;", "((-a) * b)"],
+      ["!-a;", "(!(-a))"],
+      ["a + b + c;", "((a + b) + c)"],
+      ["a + b - c;", "((a + b) - c)"],
+      ["a * b * c;", "((a * b) * c)"],
+      ["a * b / c;", "((a * b) / c)"],
+      ["a + b / c;", "(a + (b / c))"],
+      ["a + b * c + d / e - f;", "(((a + (b * c)) + (d / e)) - f)"],
+      ["3 + 4; -5 * 5;", "(3 + 4)((-5) * 5)"],
+      ["5 > 4 == 3 < 4;", "((5 > 4) == (3 < 4))"],
+      ["5 < 4 != 3 > 4;", "((5 < 4) != (3 > 4))"],
+      ["3 + 4 * 5 == 3 * 1 + 4 * 5;", "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))"],
+      ["3 > 5 == false;", "((3 > 5) == false)"],
+      ["3 < 5 == true;", "((3 < 5) == true)"],
+      ["1 + (2 + 3) + 4;", "((1 + (2 + 3)) + 4)"],
+      ["(5 + 5) * 2", "((5 + 5) * 2)"],
+      ["2 / (5 + 5)", "(2 / (5 + 5))"],
+      ["-(5 + 5)", "(-(5 + 5))"],
+      ["!(true == true)", "(!(true == true))"]
+    ];
 
-    assertProgramString("-a * b;", "((-a) * b)");
-    assertProgramString("!-a;", "(!(-a))");
-    assertProgramString("a + b + c;", "((a + b) + c)");
-    assertProgramString("a + b - c;", "((a + b) - c)");
-    assertProgramString("a * b * c;", "((a * b) * c)");
-    assertProgramString("a * b / c;", "((a * b) / c)");
-    assertProgramString("a + b / c;", "(a + (b / c))");
-    assertProgramString(
-      "a + b * c + d / e - f;",
-      "(((a + (b * c)) + (d / e)) - f)"
-    );
-    assertProgramString("3 + 4; -5 * 5;", "(3 + 4)((-5) * 5)");
-    assertProgramString("5 > 4 == 3 < 4;", "((5 > 4) == (3 < 4))");
-    assertProgramString("5 < 4 != 3 > 4;", "((5 < 4) != (3 > 4))");
-    assertProgramString(
-      "3 + 4 * 5 == 3 * 1 + 4 * 5;",
-      "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))"
-    );
+    for (let [program, expected] of programStrings) {
+      assertProgramString(program, expected);
+    }
+  });
+
+  it("It can detect booleans", () => {
+    // throw new Error("ToDo");
   });
 });
