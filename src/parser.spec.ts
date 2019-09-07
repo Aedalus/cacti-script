@@ -2,6 +2,40 @@ import { Parser } from "./parser";
 import { Lexer } from "./lexer";
 import * as AST from "./ast/ast";
 
+function testLiteralExpression(exp: AST.Expression, value: any) {
+  if (exp instanceof AST.Identifier) {
+    if (exp.value !== value)
+      throw new Error(`${JSON.stringify(exp)} does not match value`);
+  } else if (exp instanceof AST.IntegerLiteral) {
+    if (exp.value !== value) {
+      console.error(exp);
+      throw new Error(`${exp.value} does not match ${value}`);
+    }
+  } else {
+    console.error(exp);
+    throw new Error(`expression type not recognized ${JSON.stringify(exp)}`);
+  }
+}
+
+function testInfixExpression(
+  exp: AST.Expression,
+  vA: any,
+  op: string,
+  vB: any
+) {
+  if (exp instanceof AST.InfixExpression === false) {
+    console.error(exp);
+    throw new Error(`exp was not an infix expression`);
+  }
+  const infixExp = exp as AST.InfixExpression;
+  testLiteralExpression(infixExp.left, vA);
+  testLiteralExpression(infixExp.right, vB);
+  if (infixExp.operator !== op) {
+    console.error(exp);
+    throw new Error(`Operator ${infixExp.operator} does not match ${op}`);
+  }
+}
+
 function testIdentifier(exp: AST.Expression, value: string) {
   if (exp instanceof AST.Identifier == false)
     throw new Error("Expression should be an identifier");
@@ -18,6 +52,7 @@ function testIdentifier(exp: AST.Expression, value: string) {
     );
   }
 }
+
 function testIntegerLiteral(exp: AST.Expression, value: number) {
   if (exp instanceof AST.IntegerLiteral == false)
     throw new Error("Expression should be an IntegerLiteral");
@@ -58,10 +93,10 @@ describe("parser", () => {
 
   it("Can parse a return statement", () => {
     const input = `
-    return 5;
-    return 10;
-    return 993322;
-    `;
+return 5;
+return 10;
+return 993322;
+    `.trim();
 
     const lexer = new Lexer(input);
     const parser = new Parser(lexer);
@@ -181,11 +216,9 @@ describe("parser", () => {
       expect(infix.right).toBeInstanceOf(AST.Boolean);
       const right = infix.right as AST.Boolean;
       expect(right.value).toEqual(rExp);
-      // const { expression } = statement;
-      // const { } = expression;
-      // expect(statement).toEqual("foo");
     }
   });
+
   it("Can detect infix operators", () => {
     const tests: [string, number, string, number][] = [
       ["5 + 5;", 5, "+", 5],
@@ -244,10 +277,10 @@ describe("parser", () => {
       ["3 > 5 == false;", "((3 > 5) == false)"],
       ["3 < 5 == true;", "((3 < 5) == true)"],
       ["1 + (2 + 3) + 4;", "((1 + (2 + 3)) + 4)"],
-      ["(5 + 5) * 2", "((5 + 5) * 2)"],
-      ["2 / (5 + 5)", "(2 / (5 + 5))"],
-      ["-(5 + 5)", "(-(5 + 5))"],
-      ["!(true == true)", "(!(true == true))"]
+      ["(5 + 5) * 2;", "((5 + 5) * 2)"],
+      ["2 / (5 + 5);", "(2 / (5 + 5))"],
+      ["-(5 + 5);", "(-(5 + 5))"],
+      ["!(true == true);", "(!(true == true))"]
     ];
 
     for (let [program, expected] of programStrings) {
@@ -257,5 +290,100 @@ describe("parser", () => {
 
   it("It can detect booleans", () => {
     // throw new Error("ToDo");
+  });
+
+  it("Can detect an if expression", () => {
+    const input = "if (x < y) { x };";
+    const lexer = new Lexer(input);
+    const parser = new Parser(lexer);
+    expect(parser.errors).toHaveLength(0);
+    const program = parser.parseProgram();
+
+    expect(program.statements).toHaveLength(1);
+    const stmt = program.statements[0];
+    expect(stmt).toBeInstanceOf(AST.ExpressionStatement);
+    const expStmt = stmt as AST.ExpressionStatement;
+    expect(expStmt.expression).toBeInstanceOf(AST.IfExpression);
+    const ifExp = expStmt.expression as AST.IfExpression;
+
+    expect(ifExp.condition).toBeInstanceOf(AST.InfixExpression);
+    const exp = ifExp.condition as AST.InfixExpression;
+
+    // expect(() => testIntegerLiteral(exp.left, lExp)).not.toThrow();
+    // expect(exp.operator).toEqual(op);
+    // expect(() => testIntegerLiteral(exp.right, rExp)).not.toThrow();
+    // ToDo
+  });
+
+  it("Can detect a function literal", () => {
+    const input = "fn(x,y) { x + y; }";
+    const lexer = new Lexer(input);
+    const parser = new Parser(lexer);
+    const program = parser.parseProgram();
+    expect(parser.errors).toHaveLength(0);
+
+    expect(program.statements).toHaveLength(1);
+    const stmt = program.statements[0];
+    expect(stmt).toBeInstanceOf(AST.ExpressionStatement);
+
+    const exp = stmt as AST.ExpressionStatement;
+    expect(exp.expression).toBeInstanceOf(AST.FunctionLiteral);
+    const func = exp.expression as AST.FunctionLiteral;
+
+    expect(func.parameters).toHaveLength(2);
+    testLiteralExpression(func.parameters[0], "x");
+    testLiteralExpression(func.parameters[1], "y");
+
+    expect(func.body.statements).toHaveLength(1);
+    expect(func.body.statements[0]).toBeInstanceOf(AST.ExpressionStatement);
+    const bodyStmt = func.body.statements[0] as AST.ExpressionStatement;
+
+    testInfixExpression(bodyStmt.expression, "x", "+", "y");
+  });
+
+  it("Can detect function parameters", () => {
+    const tests: { input: string; expectedParams: string[] }[] = [
+      { input: "fn() {}", expectedParams: [] },
+      { input: "fn(x) {}", expectedParams: ["x"] },
+      { input: "fn(x,y,z) {}", expectedParams: ["x", "y", "z"] }
+    ];
+
+    for (let { input, expectedParams } of tests) {
+      const lexer = new Lexer(input);
+      const parser = new Parser(lexer);
+      const program = parser.parseProgram();
+
+      expect(parser.errors).toHaveLength(0);
+
+      const stmt = program.statements[0] as AST.ExpressionStatement;
+      const func = stmt.expression as AST.FunctionLiteral;
+
+      expect(func.parameters).toHaveLength(expectedParams.length);
+      for (let i = 0; i < expectedParams.length; i++) {
+        testLiteralExpression(func.parameters[i], expectedParams[i]);
+      }
+    }
+  });
+
+  it("Can parse a call expression", () => {
+    const input = "add(1,2 * 3, 4 + 5);";
+    const lexer = new Lexer(input);
+    const parser = new Parser(lexer);
+    const program = parser.parseProgram();
+    expect(parser.errors).toHaveLength(0);
+    expect(program.statements).toHaveLength(1);
+
+    expect(program.statements[0]).toBeInstanceOf(AST.ExpressionStatement);
+    const stmt = program.statements[0] as AST.ExpressionStatement;
+
+    expect(stmt.expression).toBeInstanceOf(AST.CallExpression);
+    const exp = stmt.expression as AST.CallExpression;
+
+    testIdentifier(exp.function, "add");
+    expect(exp.arguments).toHaveLength(3);
+
+    testLiteralExpression(exp.arguments[0], 1);
+    testInfixExpression(exp.arguments[1], 2, "*", 3);
+    testInfixExpression(exp.arguments[2], 4, "+", 5);
   });
 });

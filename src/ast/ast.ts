@@ -1,4 +1,5 @@
 import { Token } from "../token";
+
 export interface Node {
   tokenLiteral(): string;
   string(): string;
@@ -190,5 +191,88 @@ export class Boolean implements Expression {
   }
   string() {
     return this.token.literal;
+  }
+}
+
+export class IfExpression implements Expression {
+  token: Token;
+  condition: Expression;
+  consequence: BlockStatement;
+  alternative: BlockStatement;
+
+  expressionNode() {}
+  tokenLiteral() {
+    return this.token.literal;
+  }
+  string() {
+    let buf = "if" + this.condition.string() + " " + this.consequence.string();
+
+    if (this.alternative) {
+      buf += "else " + this.alternative.string();
+    }
+    return buf;
+  }
+}
+
+export class BlockStatement implements Statement {
+  token: Token;
+  statements: Statement[] = [];
+
+  statementNode() {}
+  tokenLiteral() {
+    return this.token.literal;
+  }
+  string() {
+    let buf = "";
+    for (let s of this.statements) {
+      buf += s.string();
+    }
+    return buf;
+  }
+}
+
+export class FunctionLiteral implements Expression {
+  token: Token;
+  parameters: Identifier[] = [];
+  body: BlockStatement;
+
+  constructor(token: Token) {
+    this.token = token;
+  }
+  expressionNode() {}
+  tokenLiteral() {
+    return this.token.literal;
+  }
+  string() {
+    let buf = "";
+
+    buf += this.tokenLiteral();
+    buf += "(";
+    buf += this.parameters.map(x => x.string()).join(",");
+    buf += ") ";
+    buf += this.body.string();
+
+    return buf;
+  }
+}
+
+export class CallExpression implements Expression {
+  token: Token;
+  function: Expression;
+  arguments: Expression[];
+
+  expressionNode() {}
+  tokenLiteral() {
+    return this.token.literal;
+  }
+  string() {
+    let buf = "";
+
+    buf += this.function.string();
+    buf += "(";
+    buf += this.arguments.map(x => x.string()).join(",");
+    buf += ")";
+
+    return buf;
   }
 }
