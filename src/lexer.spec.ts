@@ -18,7 +18,7 @@ let result = add(five, ten);
       const token = l.nextToken();
       if (token.type === TOKEN_TYPE.EOF) break;
       else {
-        console.log(token);
+        // console.log(token);
       }
     }
   });
