@@ -1,7 +1,7 @@
 import * as path from "path";
 import * as fs from "fs";
 
-import { Lexer, Parser, TOKEN_TYPE } from "../index";
+import { evalNode, Lexer, Parser, TOKEN_TYPE } from "../index";
 const program = require("commander");
 
 program
@@ -47,4 +47,27 @@ program
     program.statements.forEach(x => console.log(x));
   });
 
+program
+  .command("run <file>")
+  .description("Runs a file and prints the output")
+  .action((file: string) => {
+    if (path.extname(file) !== ".cacti") {
+      console.error("Error: File does not end with .cacti");
+      process.exit(1);
+    }
+
+    const input = fs.readFileSync(path.resolve(file)).toString();
+    const lexer = new Lexer(input);
+    const parser = new Parser(lexer);
+    if (parser.errors.length) {
+      parser.errors.forEach(x => console.log(x));
+      process.exit(1);
+    }
+
+    const program = parser.parseProgram();
+    const evaluated = evalNode(program);
+    if (evaluated) {
+      console.log(evaluated.inpect());
+    }
+  });
 program.parse(process.argv);
