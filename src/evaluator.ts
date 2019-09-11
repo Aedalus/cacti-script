@@ -16,11 +16,65 @@ export function evalNode(node: AST.Node): Obj.Obj {
     return evalNode(node.expression);
   } else if (node instanceof AST.IntegerLiteral) {
     return new Obj.IntegerObj(node.value);
+  } else if (node instanceof AST.InfixExpression) {
+    const left = evalNode(node.left);
+    const right = evalNode(node.right);
+    return evalInfixExpression(node.operator, left, right);
   } else if (node instanceof AST.Boolean) {
     return node.value ? TrueObj : FalseObj;
   } else {
     console.error("Node type not recognized");
     return null;
+  }
+}
+
+export function evalInfixExpression(
+  operator: string,
+  left: Obj.Obj,
+  right: Obj.Obj
+): Obj.Obj {
+  if (left instanceof Obj.IntegerObj && right instanceof Obj.IntegerObj) {
+    return evalIntegerInfixExpression(operator, left, right);
+  }
+
+  // Boolean infix expressions
+  if (operator === "==") {
+    return nativeBoolToBooleanObj(left === right);
+  } else if (operator === "!=") {
+    return nativeBoolToBooleanObj(left !== right);
+  }
+
+  return NullObj;
+}
+
+export function nativeBoolToBooleanObj(bool: boolean) {
+  return bool ? TrueObj : FalseObj;
+}
+
+export function evalIntegerInfixExpression(
+  operator: string,
+  left: Obj.IntegerObj,
+  right: Obj.IntegerObj
+): Obj.Obj {
+  switch (operator) {
+    case "+":
+      return new Obj.IntegerObj(left.value + right.value);
+    case "-":
+      return new Obj.IntegerObj(left.value - right.value);
+    case "*":
+      return new Obj.IntegerObj(left.value * right.value);
+    case "/":
+      return new Obj.IntegerObj(Math.floor(left.value / right.value));
+    case "<":
+      return nativeBoolToBooleanObj(left.value < right.value);
+    case ">":
+      return nativeBoolToBooleanObj(left.value > right.value);
+    case "==":
+      return nativeBoolToBooleanObj(left.value === right.value);
+    case "!=":
+      return nativeBoolToBooleanObj(left.value !== right.value);
+    default:
+      return NullObj;
   }
 }
 
