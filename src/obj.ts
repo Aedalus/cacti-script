@@ -1,7 +1,8 @@
 enum OBJECT_TYPE {
   INTEGER_OBJ = "INTEGER_OBJ",
   BOOLEAN_OBJ = "BOOLEAN_OBJ",
-  NULL_OBJ = "NULL_OBJ"
+  NULL_OBJ = "NULL_OBJ",
+  RETURN_VALUE_OBJ = "RETURN_VALUE_OBJ"
 }
 
 export interface Obj {
@@ -42,5 +43,19 @@ export class NullObj implements Obj {
   }
   inpect() {
     return "null";
+  }
+}
+
+export class ReturnValue implements Obj {
+  value: Obj;
+
+  constructor(value: Obj) {
+    this.value = value;
+  }
+  type() {
+    return OBJECT_TYPE.RETURN_VALUE_OBJ;
+  }
+  inpect() {
+    return this.value.inpect();
   }
 }

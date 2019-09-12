@@ -8,7 +8,7 @@ const NullObj = new Obj.NullObj();
 
 export function evalNode(node: AST.Node): Obj.Obj {
   if (node instanceof AST.Program) {
-    return evalStatements(node.statements);
+    return evalProgram(node.statements);
   } else if (node instanceof AST.PrefixExpression) {
     const right = evalNode(node.right);
     return evalPrefixExpression(node.operator, right);
@@ -22,12 +22,62 @@ export function evalNode(node: AST.Node): Obj.Obj {
     return evalInfixExpression(node.operator, left, right);
   } else if (node instanceof AST.Boolean) {
     return node.value ? TrueObj : FalseObj;
+  } else if (node instanceof AST.BlockStatement) {
+    return evalBlockStatement(node);
+  } else if (node instanceof AST.IfExpression) {
+    return evalIfExpression(node);
+  } else if (node instanceof AST.ReturnStatement) {
+    const val = evalNode(node.returnValue);
+    return new Obj.ReturnValue(val);
   } else {
     console.error("Node type not recognized");
     return null;
   }
 }
 
+export function evalBlockStatement(block: AST.BlockStatement) {
+  let result: Obj.Obj;
+
+  for (let stmt of block.statements) {
+    result = evalNode(stmt);
+
+    if (result instanceof Obj.ReturnValue) {
+      return result;
+    }
+  }
+  return result;
+}
+
+export function evalProgram(stmts: AST.Statement[]): Obj.Obj {
+  let result: Obj.Obj | undefined;
+
+  for (let stmt of stmts) {
+    result = evalNode(stmt);
+    if (result instanceof Obj.ReturnValue) {
+      return result.value;
+    }
+  }
+
+  return result;
+}
+
+export function evalIfExpression(ie: AST.IfExpression): Obj.Obj {
+  const condition = evalNode(ie.condition);
+
+  if (isTruthy(condition)) {
+    return evalNode(ie.consequence);
+  } else if (ie.alternative) {
+    return evalNode(ie.alternative);
+  } else {
+    return NullObj;
+  }
+}
+
+export function isTruthy(obj: Obj.Obj) {
+  if (obj instanceof Obj.BooleanObj) return obj.value;
+  if (obj instanceof Obj.NullObj) return false;
+  return true;
+}
 export function evalInfixExpression(
   operator: string,
   left: Obj.Obj,
@@ -107,14 +157,4 @@ export function evalBangOperatorExpression(right: Obj.Obj): Obj.Obj {
   else if (right === FalseObj) return TrueObj;
   else if (right === NullObj) return TrueObj;
   else return FalseObj;
-}
-
-export function evalStatements(stmts: AST.Statement[]): Obj.Obj {
-  let result: Obj.Obj | undefined = undefined;
-
-  for (let s of stmts) {
-    result = evalNode(s);
-  }
-
-  return result;
 }

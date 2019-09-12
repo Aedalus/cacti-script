@@ -103,4 +103,52 @@ describe("evaluator", () => {
       testBooleanObject(evaluated, expected);
     }
   });
+
+  it("Can eval if/else expressions", () => {
+    const tests = [
+      { input: "if (true) { 10 }", expected: 10 },
+      { input: "if (false) { 10 }", expected: null },
+      { input: "if (1) { 10 }", expected: 10 },
+      { input: "if (1 < 2) { 10 }", expected: 10 },
+      { input: "if (1 > 2) { 10 }", expected: null },
+      { input: "if (1 > 2) { 10 } else { 20 }", expected: 20 },
+      { input: "if (1 < 2) { 10 } else { 20 }", expected: 10 }
+    ];
+
+    for (let { input, expected } of tests) {
+      const evaluated = testEval(input);
+      if (expected !== null) {
+        expect(evaluated).toBeInstanceOf(Obj.IntegerObj);
+        const intExp = evaluated as Obj.IntegerObj;
+        expect(intExp.value).toEqual(expected);
+      } else {
+        expect(evaluated).toBeInstanceOf(Obj.NullObj);
+      }
+    }
+  });
+
+  it("Can evaluated return statements", () => {
+    const tests = [
+      { input: "return 10;", expected: 10 },
+      { input: "return 10; 9;", expected: 10 },
+      { input: "return 2 * 5; 9;", expected: 10 },
+      { input: "9; return 2 * 5; 9;", expected: 10 },
+      {
+        input: `
+        if(10 > 1) {
+          if(10 > 1) {
+            return 10;
+          }
+          return 1;
+        }
+      `,
+        expected: 10
+      }
+    ];
+
+    for (let { input, expected } of tests) {
+      const evaluated = testEval(input);
+      testIntegerObject(evaluated, expected);
+    }
+  });
 });
