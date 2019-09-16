@@ -6,19 +6,27 @@ const TrueObj = new Obj.BooleanObj(true);
 const FalseObj = new Obj.BooleanObj(false);
 const NullObj = new Obj.NullObj();
 
+function isError(obj: Obj.Obj) {
+  if (obj) return obj instanceof Obj.ErrorObj;
+  return false;
+}
+
 export function evalNode(node: AST.Node): Obj.Obj {
   if (node instanceof AST.Program) {
     return evalProgram(node.statements);
   } else if (node instanceof AST.PrefixExpression) {
     const right = evalNode(node.right);
-    return evalPrefixExpression(node.operator, right);
+    return isError(right) ? right : evalPrefixExpression(node.operator, right);
   } else if (node instanceof AST.ExpressionStatement) {
     return evalNode(node.expression);
   } else if (node instanceof AST.IntegerLiteral) {
     return new Obj.IntegerObj(node.value);
   } else if (node instanceof AST.InfixExpression) {
     const left = evalNode(node.left);
+    if (isError(left)) return left;
+
     const right = evalNode(node.right);
+    if (isError(right)) return right;
     return evalInfixExpression(node.operator, left, right);
   } else if (node instanceof AST.Boolean) {
     return node.value ? TrueObj : FalseObj;
@@ -28,7 +36,7 @@ export function evalNode(node: AST.Node): Obj.Obj {
     return evalIfExpression(node);
   } else if (node instanceof AST.ReturnStatement) {
     const val = evalNode(node.returnValue);
-    return new Obj.ReturnValue(val);
+    return isError(val) ? val : new Obj.ReturnValue(val);
   } else {
     console.error("Node type not recognized");
     return null;
@@ -67,6 +75,7 @@ export function evalProgram(stmts: AST.Statement[]): Obj.Obj {
 
 export function evalIfExpression(ie: AST.IfExpression): Obj.Obj {
   const condition = evalNode(ie.condition);
+  if (isError(condition)) return condition;
 
   if (isTruthy(condition)) {
     return evalNode(ie.consequence);
