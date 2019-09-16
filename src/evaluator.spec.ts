@@ -151,4 +151,40 @@ describe("evaluator", () => {
       testIntegerObject(evaluated, expected);
     }
   });
+
+  it("Can recognize an error", () => {
+    const tests = [
+      { input: "5 + true;", expected: "type mismatch: INTEGER + BOOLEAN" },
+      { input: "5 + true; 5;", expected: "type mismatch: INTEGER + BOOLEAN" },
+      { input: "-true;", expected: "unknown operator: -BOOLEAN" },
+      {
+        input: "true + false;",
+        expected: "unknown operator: BOOLEAN + BOOLEAN"
+      },
+      {
+        input: "5; true + false; 5;",
+        expected: "unknown operator: BOOLEAN + BOOLEAN"
+      },
+      {
+        input: "if (10 > 1) { true + false; }",
+        expected: "unknown operator: BOOLEAN + BOOLEAN"
+      },
+      {
+        input: `
+        if(10 > 1){
+          if(10 > 1){
+            return true + false
+          }
+        }`,
+        expected: "unknown operator: BOOLEAN + BOOLEAN"
+      }
+    ];
+
+    for (let { input, expected } of tests) {
+      const evaluated = testEval(input);
+      expect(evaluated).toBeInstanceOf(Obj.ErrorObj);
+      const err = evaluated as Obj.ErrorObj;
+      expect(err.message).toEqual(expected);
+    }
+  });
 });

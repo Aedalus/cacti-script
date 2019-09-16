@@ -1,8 +1,9 @@
 enum OBJECT_TYPE {
-  INTEGER_OBJ = "INTEGER_OBJ",
-  BOOLEAN_OBJ = "BOOLEAN_OBJ",
-  NULL_OBJ = "NULL_OBJ",
-  RETURN_VALUE_OBJ = "RETURN_VALUE_OBJ"
+  INTEGER_OBJ = "INTEGER",
+  BOOLEAN_OBJ = "BOOLEAN",
+  NULL_OBJ = "NULL",
+  RETURN_VALUE_OBJ = "RETURN_VALUE",
+  ERROR_OBJ = "ERROR"
 }
 
 export interface Obj {
@@ -57,5 +58,21 @@ export class ReturnValue implements Obj {
   }
   inpect() {
     return this.value.inpect();
+  }
+}
+
+export class ErrorObj implements Obj {
+  message: string;
+
+  constructor(message: string) {
+    this.message = message;
+  }
+
+  type() {
+    return OBJECT_TYPE.ERROR_OBJ;
+  }
+
+  inpect(): string {
+    return "ERROR: " + this.message;
   }
 }

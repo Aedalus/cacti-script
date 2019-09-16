@@ -43,6 +43,8 @@ export function evalBlockStatement(block: AST.BlockStatement) {
 
     if (result instanceof Obj.ReturnValue) {
       return result;
+    } else if (result instanceof Obj.ErrorObj) {
+      return result;
     }
   }
   return result;
@@ -55,6 +57,8 @@ export function evalProgram(stmts: AST.Statement[]): Obj.Obj {
     result = evalNode(stmt);
     if (result instanceof Obj.ReturnValue) {
       return result.value;
+    } else if (result instanceof Obj.ErrorObj) {
+      return result;
     }
   }
 
@@ -94,7 +98,16 @@ export function evalInfixExpression(
     return nativeBoolToBooleanObj(left !== right);
   }
 
-  return NullObj;
+  // Errors
+  if (left.type() !== right.type()) {
+    return new Obj.ErrorObj(
+      `type mismatch: ${left.type()} ${operator} ${right.type()}`
+    );
+  } else {
+    return new Obj.ErrorObj(
+      `unknown operator: ${left.type()} ${operator} ${right.type()}`
+    );
+  }
 }
 
 export function nativeBoolToBooleanObj(bool: boolean) {
@@ -124,7 +137,9 @@ export function evalIntegerInfixExpression(
     case "!=":
       return nativeBoolToBooleanObj(left.value !== right.value);
     default:
-      return NullObj;
+      return new Obj.ErrorObj(
+        `unknown operator: ${left.type()} ${operator} ${right.type}`
+      );
   }
 }
 
@@ -138,13 +153,13 @@ export function evalPrefixExpression(
     case "-":
       return evalMinusPrefixOperatorExpression(right);
     default:
-      return NullObj;
+      return new Obj.ErrorObj(`unknown operator: ${operator}, ${right.type()}`);
   }
 }
 
 export function evalMinusPrefixOperatorExpression(right: Obj.Obj): Obj.Obj {
   if (right instanceof Obj.IntegerObj === false) {
-    return NullObj;
+    return new Obj.ErrorObj(`unknown operator: -${right.type()}`);
   } else {
     const intObj = right as Obj.IntegerObj;
     const value = intObj.value;
