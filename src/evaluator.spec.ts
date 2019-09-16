@@ -202,4 +202,51 @@ describe("evaluator", () => {
       testIntegerObject(testEval(input), expected);
     }
   });
+
+  it("Can recognize functions", () => {
+    const input = "fn(x){ x + 2; };";
+    const evaluated = testEval(input);
+
+    expect(evaluated).toBeInstanceOf(Obj.FunctionObj);
+    const funcObj = evaluated as Obj.FunctionObj;
+
+    expect(funcObj.parameters).toHaveLength(1);
+    expect(funcObj.parameters[0].string()).toEqual("x");
+    expect(funcObj.body.string()).toEqual("(x + 2)");
+  });
+
+  it("Can recognize more functions", () => {
+    const tests = [
+      { input: "let identity = fn(x) { x; }; identity(5);", expected: 5 },
+      {
+        input: "let identity = fn(x) { return x; }; identity(5);",
+        expected: 5
+      },
+      {
+        input: "let double = fn(x) { return x * 2; }; double(5);",
+        expected: 10
+      },
+      { input: "let add = fn(x,y) { return x + y; }; add(5,5);", expected: 10 },
+      {
+        input: "let add = fn(x,y) { return x + y; }; add(5 + 5, add(5,5));",
+        expected: 20
+      },
+      { input: "fn(x){ x; }(5)", expected: 5 }
+    ];
+
+    for (let { input, expected } of tests) {
+      testIntegerObject(testEval(input), expected);
+    }
+  });
+
+  it("Can recognize function closues", () => {
+    const input = `
+    let newAdder = fn(x) {
+      fn(y) { x + y };
+    };
+    
+    let addTwo = newAdder(2);
+    addTwo(2);`;
+    testIntegerObject(testEval(input), 4);
+  });
 });

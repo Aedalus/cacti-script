@@ -1,9 +1,13 @@
+import * as AST from "./ast/ast";
+import { Environment } from "./environment";
+
 enum OBJECT_TYPE {
   INTEGER_OBJ = "INTEGER",
   BOOLEAN_OBJ = "BOOLEAN",
   NULL_OBJ = "NULL",
   RETURN_VALUE_OBJ = "RETURN_VALUE",
-  ERROR_OBJ = "ERROR"
+  ERROR_OBJ = "ERROR",
+  FUNCTION_OBJ = "FUNCTION"
 }
 
 export interface Obj {
@@ -74,5 +78,36 @@ export class ErrorObj implements Obj {
 
   inpect(): string {
     return "ERROR: " + this.message;
+  }
+}
+
+export class FunctionObj implements Obj {
+  parameters: AST.Identifier[];
+  body: AST.BlockStatement;
+  env: Environment;
+
+  constructor(
+    parameters: AST.Identifier[],
+    body: AST.BlockStatement,
+    env: Environment
+  ) {
+    this.parameters = parameters;
+    this.body = body;
+    this.env = env;
+  }
+
+  type() {
+    return OBJECT_TYPE.FUNCTION_OBJ;
+  }
+
+  inpect(): string {
+    let str = "";
+
+    str += "fn(";
+    str += this.parameters.map(x => x.string()).join(",");
+    str += ") {\n";
+    str += this.body.string();
+    str += "\n}";
+    throw new Error("Method not implemented.");
   }
 }

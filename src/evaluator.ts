@@ -43,10 +43,64 @@ export function evalNode(node: AST.Node, env: Environment): Obj.Obj {
     env.set(node.name.value, val);
   } else if (node instanceof AST.Identifier) {
     return evalIdentifier(node, env);
+  } else if (node instanceof AST.FunctionLiteral) {
+    const params = node.parameters;
+    const body = node.body;
+    return new Obj.FunctionObj(params, body, env);
+  } else if (node instanceof AST.CallExpression) {
+    const func = evalNode(node.function, env);
+    if (isError(func)) return func;
+    const args = evalExpressions(node.arguments, env);
+    if (args.length === 1 && isError(args[0])) {
+      return args[0];
+    }
+    return applyFunction(func, args);
   } else {
     console.error("Node type not recognized");
     return null;
   }
+}
+
+export function applyFunction(func: Obj.Obj, args: Obj.Obj[]) {
+  if (func instanceof Obj.FunctionObj === false)
+    throw new Error(`not a function: ${func.type}`);
+
+  const fn = func as Obj.FunctionObj;
+  const extendedEnv = extendFunctionEnv(fn, args);
+  const evaluated = evalNode(fn.body, extendedEnv);
+  return unwrapReturnValue(evaluated);
+}
+
+export function extendFunctionEnv(
+  fn: Obj.FunctionObj,
+  args: Obj.Obj[]
+): Environment {
+  const env = Environment.newEnclosedEnvironment(fn.env);
+  fn.parameters.forEach((p, i) => {
+    env.set(p.value, args[i]);
+  });
+  return env;
+}
+
+export function unwrapReturnValue(obj: Obj.Obj): Obj.Obj {
+  if (obj instanceof Obj.ReturnValue) return obj.value;
+  return obj;
+}
+
+export function evalExpressions(
+  exps: AST.Expression[],
+  env: Environment
+): Obj.Obj[] {
+  const result: Obj.Obj[] = [];
+  for (let e of exps) {
+    const evaluated = evalNode(e, env);
+    if (isError(evaluated)) {
+      return [evaluated];
+    } else {
+      result.push(evaluated);
+    }
+  }
+  return result;
 }
 
 export function evalIdentifier(

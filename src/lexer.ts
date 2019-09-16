@@ -3,7 +3,7 @@ import { TOKEN_TYPE, Token, lookupIdent } from "./token";
 const isLetter = (char: string): boolean => {
   if (char.length !== 1) throw new Error(`Tried to parse ${char} as letter`);
   return (
-    ("a" <= char && char <= "z") || ("a" <= char && char <= "z") || char === "_"
+    ("a" <= char && char <= "z") || ("A" <= char && char <= "Z") || char === "_"
   );
 };
 

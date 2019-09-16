@@ -2,6 +2,7 @@ import * as path from "path";
 import * as fs from "fs";
 
 import { evalNode, Lexer, Parser, TOKEN_TYPE } from "../index";
+import { Environment } from "../environment";
 const program = require("commander");
 
 program
@@ -65,7 +66,7 @@ program
     }
 
     const program = parser.parseProgram();
-    const evaluated = evalNode(program);
+    const evaluated = evalNode(program, new Environment());
     if (evaluated) {
       console.log(evaluated.inpect());
     }
