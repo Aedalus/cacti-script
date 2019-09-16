@@ -1,6 +1,6 @@
 import * as AST from "./ast/ast";
 import * as Obj from "./obj";
-
+import { Environment } from "./environment";
 // Don't need to recreate these each time
 const TrueObj = new Obj.BooleanObj(true);
 const FalseObj = new Obj.BooleanObj(false);
@@ -11,43 +11,60 @@ function isError(obj: Obj.Obj) {
   return false;
 }
 
-export function evalNode(node: AST.Node): Obj.Obj {
+export function evalNode(node: AST.Node, env: Environment): Obj.Obj {
   if (node instanceof AST.Program) {
-    return evalProgram(node.statements);
+    return evalProgram(node.statements, env);
   } else if (node instanceof AST.PrefixExpression) {
-    const right = evalNode(node.right);
+    const right = evalNode(node.right, env);
     return isError(right) ? right : evalPrefixExpression(node.operator, right);
   } else if (node instanceof AST.ExpressionStatement) {
-    return evalNode(node.expression);
+    return evalNode(node.expression, env);
   } else if (node instanceof AST.IntegerLiteral) {
     return new Obj.IntegerObj(node.value);
   } else if (node instanceof AST.InfixExpression) {
-    const left = evalNode(node.left);
+    const left = evalNode(node.left, env);
     if (isError(left)) return left;
 
-    const right = evalNode(node.right);
+    const right = evalNode(node.right, env);
     if (isError(right)) return right;
     return evalInfixExpression(node.operator, left, right);
   } else if (node instanceof AST.Boolean) {
     return node.value ? TrueObj : FalseObj;
   } else if (node instanceof AST.BlockStatement) {
-    return evalBlockStatement(node);
+    return evalBlockStatement(node, env);
   } else if (node instanceof AST.IfExpression) {
-    return evalIfExpression(node);
+    return evalIfExpression(node, env);
   } else if (node instanceof AST.ReturnStatement) {
-    const val = evalNode(node.returnValue);
+    const val = evalNode(node.returnValue, env);
     return isError(val) ? val : new Obj.ReturnValue(val);
+  } else if (node instanceof AST.LetStatement) {
+    const val = evalNode(node.value, env);
+    if (isError(val)) return val;
+    env.set(node.name.value, val);
+  } else if (node instanceof AST.Identifier) {
+    return evalIdentifier(node, env);
   } else {
     console.error("Node type not recognized");
     return null;
   }
 }
 
-export function evalBlockStatement(block: AST.BlockStatement) {
+export function evalIdentifier(
+  node: AST.Identifier,
+  env: Environment
+): Obj.Obj {
+  const val = env.get(node.value);
+  return val ? val : new Obj.ErrorObj(`identifier not found: ${node.value}`);
+}
+
+export function evalBlockStatement(
+  block: AST.BlockStatement,
+  env: Environment
+) {
   let result: Obj.Obj;
 
   for (let stmt of block.statements) {
-    result = evalNode(stmt);
+    result = evalNode(stmt, env);
 
     if (result instanceof Obj.ReturnValue) {
       return result;
@@ -58,11 +75,11 @@ export function evalBlockStatement(block: AST.BlockStatement) {
   return result;
 }
 
-export function evalProgram(stmts: AST.Statement[]): Obj.Obj {
+export function evalProgram(stmts: AST.Statement[], env: Environment): Obj.Obj {
   let result: Obj.Obj | undefined;
 
   for (let stmt of stmts) {
-    result = evalNode(stmt);
+    result = evalNode(stmt, env);
     if (result instanceof Obj.ReturnValue) {
       return result.value;
     } else if (result instanceof Obj.ErrorObj) {
@@ -73,14 +90,17 @@ export function evalProgram(stmts: AST.Statement[]): Obj.Obj {
   return result;
 }
 
-export function evalIfExpression(ie: AST.IfExpression): Obj.Obj {
-  const condition = evalNode(ie.condition);
+export function evalIfExpression(
+  ie: AST.IfExpression,
+  env: Environment
+): Obj.Obj {
+  const condition = evalNode(ie.condition, env);
   if (isError(condition)) return condition;
 
   if (isTruthy(condition)) {
-    return evalNode(ie.consequence);
+    return evalNode(ie.consequence, env);
   } else if (ie.alternative) {
-    return evalNode(ie.alternative);
+    return evalNode(ie.alternative, env);
   } else {
     return NullObj;
   }

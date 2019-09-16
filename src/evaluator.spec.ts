@@ -2,13 +2,14 @@ import { Lexer } from "./lexer";
 import { Parser } from "./parser";
 import { evalNode } from "./evaluator";
 import * as Obj from "./obj";
+import { Environment } from "./environment";
 
 function testEval(input: string): Obj.Obj {
   const lexer = new Lexer(input);
   const parser = new Parser(lexer);
   const program = parser.parseProgram();
-
-  return evalNode(program);
+  const env = new Environment();
+  return evalNode(program, env);
 }
 
 function testIntegerObject(obj: Obj.Obj, expected: number) {
@@ -177,7 +178,8 @@ describe("evaluator", () => {
           }
         }`,
         expected: "unknown operator: BOOLEAN + BOOLEAN"
-      }
+      },
+      { input: "foobar;", expected: "identifier not found: foobar" }
     ];
 
     for (let { input, expected } of tests) {
@@ -185,6 +187,19 @@ describe("evaluator", () => {
       expect(evaluated).toBeInstanceOf(Obj.ErrorObj);
       const err = evaluated as Obj.ErrorObj;
       expect(err.message).toEqual(expected);
+    }
+  });
+
+  it("Can evaluate let statements", () => {
+    const tests = [
+      { input: "let a = 5; a;", expected: 5 },
+      { input: "let a = 5 * 5; a;", expected: 25 },
+      { input: "let a = 5; let b = a; b;", expected: 5 },
+      { input: "let a = 5; let b = a; let c = a + b + 5; c;", expected: 15 }
+    ];
+
+    for (let { input, expected } of tests) {
+      testIntegerObject(testEval(input), expected);
     }
   });
 });
