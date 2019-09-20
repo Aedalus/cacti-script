@@ -174,6 +174,9 @@ export function evalInfixExpression(
   if (left instanceof Obj.IntegerObj && right instanceof Obj.IntegerObj) {
     return evalIntegerInfixExpression(operator, left, right);
   }
+  if (left instanceof Obj.StringObj && right instanceof Obj.StringObj) {
+    return evalStringInfixExpression(operator, left, right);
+  }
 
   // Boolean infix expressions
   if (operator === "==") {
@@ -198,6 +201,21 @@ export function nativeBoolToBooleanObj(bool: boolean) {
   return bool ? TrueObj : FalseObj;
 }
 
+export function evalStringInfixExpression(
+  operator: string,
+  left: Obj.StringObj,
+  right: Obj.StringObj
+): Obj.Obj {
+  if (operator !== "+") {
+    return new Obj.ErrorObj(
+      `unknown operator: ${left.type()} ${operator} ${right.type()}`
+    );
+  }
+
+  const leftVal = left.value;
+  const rightVal = right.value;
+  return new Obj.StringObj(leftVal + rightVal);
+}
 export function evalIntegerInfixExpression(
   operator: string,
   left: Obj.IntegerObj,

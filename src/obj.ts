@@ -8,7 +8,7 @@ enum OBJECT_TYPE {
   RETURN_VALUE_OBJ = "RETURN_VALUE",
   ERROR_OBJ = "ERROR",
   FUNCTION_OBJ = "FUNCTION",
-  STRING_OBJ = "STRING_OBG"
+  STRING_OBJ = "STRING"
 }
 
 export interface Obj {

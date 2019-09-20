@@ -179,7 +179,11 @@ describe("evaluator", () => {
         }`,
         expected: "unknown operator: BOOLEAN + BOOLEAN"
       },
-      { input: "foobar;", expected: "identifier not found: foobar" }
+      { input: "foobar;", expected: "identifier not found: foobar" },
+      {
+        input: `"Hello" - "World";`,
+        expected: "unknown operator: STRING - STRING"
+      }
     ];
 
     for (let { input, expected } of tests) {
@@ -256,6 +260,15 @@ describe("evaluator", () => {
 
     expect(evaluated).toBeInstanceOf(Obj.StringObj);
     const str = evaluated as Obj.StringObj;
+    expect(str.value).toEqual("Hello World!");
+  });
+
+  it("Can perform string concatenation", () => {
+    const input = '"Hello" + " " + "World!"';
+    const evaluated = testEval(input);
+    expect(evaluated).toBeInstanceOf(Obj.StringObj);
+    const str = evaluated as Obj.StringObj;
+
     expect(str.value).toEqual("Hello World!");
   });
 });
