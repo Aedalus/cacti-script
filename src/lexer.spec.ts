@@ -10,7 +10,8 @@ let ten = 10;
 let result = add(five, ten);
 
 10 == 10; 10 != 9;
-
+"foobar"
+"foo bar"
 `;
 
     const l = new Lexer(input);

@@ -60,6 +60,7 @@ export class Parser {
       TOKEN_TYPE.FUNCTION,
       this.parseFunctionLiteral.bind(this)
     );
+    this.registerPrefix(TOKEN_TYPE.STRING, this.parseStringLiteral.bind(this));
 
     // Infixes
     this.registerInfix(TOKEN_TYPE.PLUS, this.parseInfixExpression.bind(this));
@@ -74,6 +75,10 @@ export class Parser {
     this.registerInfix(TOKEN_TYPE.LT, this.parseInfixExpression.bind(this));
     this.registerInfix(TOKEN_TYPE.GT, this.parseInfixExpression.bind(this));
     this.registerInfix(TOKEN_TYPE.LPAREN, this.parseCallExpression.bind(this));
+  }
+
+  parseStringLiteral(): AST.Expression {
+    return new AST.StringLiteral(this.curToken, this.curToken.literal);
   }
 
   parseCallExpression(func: AST.Expression): AST.Expression {

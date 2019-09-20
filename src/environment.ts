@@ -3,6 +3,7 @@ export class Environment {
   store: { [index: string]: Obj } = {};
   outer?: Environment;
 
+  constructor() {}
   static newEnclosedEnvironment(outer: Environment) {
     const env = new Environment();
     env.outer = outer;

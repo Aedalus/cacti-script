@@ -43,11 +43,24 @@ export class Lexer {
       this.readChar();
   }
 
+  readString(): string {
+    const position = this.position + 1;
+    while (true) {
+      this.readChar();
+      if (this.ch === '"' || this.ch === undefined) {
+        break;
+      }
+    }
+    return this.input.slice(position, this.position);
+  }
+
   nextToken(): Token {
     this.skipWhitespace();
 
     let token: Token;
-    if (this.ch === "=") {
+    if (this.ch === '"') {
+      token = { type: TOKEN_TYPE.STRING, literal: this.readString() };
+    } else if (this.ch === "=") {
       if (this.peekChar() === "=") {
         token = { type: TOKEN_TYPE.EQ, literal: this.ch + this.peekChar() };
         this.readChar();

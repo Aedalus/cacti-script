@@ -5,6 +5,7 @@ export enum TOKEN_TYPE {
   EOF = "EOF",
   IDENT = "IDENT",
   INT = "INT",
+  STRING = "STRING",
   COMMA = ",",
   SEMICOLON = ";",
   LPAREN = "(",

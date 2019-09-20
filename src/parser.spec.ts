@@ -386,4 +386,18 @@ return 993322;
     testInfixExpression(exp.arguments[1], 2, "*", 3);
     testInfixExpression(exp.arguments[2], 4, "+", 5);
   });
+
+  it("Can parse string literals", () => {
+    const input = `"hello world";`;
+    const l = new Lexer(input);
+    const p = new Parser(l);
+    const program = p.parseProgram();
+
+    expect(p.errors).toHaveLength(0);
+
+    const stmt = program.statements[0] as AST.ExpressionStatement;
+    expect(stmt.expression).toBeInstanceOf(AST.StringLiteral);
+    const literal = stmt.expression as AST.StringLiteral;
+    expect(literal.value).toEqual("hello world");
+  });
 });

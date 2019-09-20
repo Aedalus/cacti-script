@@ -2,13 +2,14 @@
   "name": "cacti-script",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/cacti-script.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "test": "jest .",
     "start": "webpack -w"
   },
   "bin": {
-    "cacti": "dist/cacti-script.js"
+    "cacti": "dist/cacti-script-cli.js"
   },
   "keywords": [],
   "author": "",
