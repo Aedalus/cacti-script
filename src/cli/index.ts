@@ -68,7 +68,7 @@ program
     const program = parser.parseProgram();
     const evaluated = evalNode(program, new Environment());
     if (evaluated) {
-      console.log(evaluated.inpect());
+      console.log(evaluated.inspect());
     }
   });
 program.parse(process.argv);

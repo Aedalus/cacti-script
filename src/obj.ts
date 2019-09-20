@@ -7,12 +7,13 @@ enum OBJECT_TYPE {
   NULL_OBJ = "NULL",
   RETURN_VALUE_OBJ = "RETURN_VALUE",
   ERROR_OBJ = "ERROR",
-  FUNCTION_OBJ = "FUNCTION"
+  FUNCTION_OBJ = "FUNCTION",
+  STRING_OBJ = "STRING_OBG"
 }
 
 export interface Obj {
   type(): OBJECT_TYPE;
-  inpect(): string;
+  inspect(): string;
 }
 
 export class IntegerObj implements Obj {
@@ -24,7 +25,7 @@ export class IntegerObj implements Obj {
   type() {
     return OBJECT_TYPE.INTEGER_OBJ;
   }
-  inpect() {
+  inspect() {
     return this.value.toString();
   }
 }
@@ -37,7 +38,7 @@ export class BooleanObj implements Obj {
   type() {
     return OBJECT_TYPE.BOOLEAN_OBJ;
   }
-  inpect() {
+  inspect() {
     return this.value ? "true" : "false";
   }
 }
@@ -46,7 +47,7 @@ export class NullObj implements Obj {
   type() {
     return OBJECT_TYPE.NULL_OBJ;
   }
-  inpect() {
+  inspect() {
     return "null";
   }
 }
@@ -60,8 +61,8 @@ export class ReturnValue implements Obj {
   type() {
     return OBJECT_TYPE.RETURN_VALUE_OBJ;
   }
-  inpect() {
-    return this.value.inpect();
+  inspect() {
+    return this.value.inspect();
   }
 }
 
@@ -76,7 +77,7 @@ export class ErrorObj implements Obj {
     return OBJECT_TYPE.ERROR_OBJ;
   }
 
-  inpect(): string {
+  inspect(): string {
     return "ERROR: " + this.message;
   }
 }
@@ -100,7 +101,7 @@ export class FunctionObj implements Obj {
     return OBJECT_TYPE.FUNCTION_OBJ;
   }
 
-  inpect(): string {
+  inspect(): string {
     let str = "";
 
     str += "fn(";
@@ -109,5 +110,19 @@ export class FunctionObj implements Obj {
     str += this.body.string();
     str += "\n}";
     throw new Error("Method not implemented.");
+  }
+}
+
+export class StringObj implements Obj {
+  value: string;
+
+  constructor(value: string) {
+    this.value = value;
+  }
+  type() {
+    return OBJECT_TYPE.STRING_OBJ;
+  }
+  inspect(): string {
+    return this.value;
   }
 }

@@ -17,6 +17,8 @@ export function evalNode(node: AST.Node, env: Environment): Obj.Obj {
   } else if (node instanceof AST.PrefixExpression) {
     const right = evalNode(node.right, env);
     return isError(right) ? right : evalPrefixExpression(node.operator, right);
+  } else if (node instanceof AST.StringLiteral) {
+    return new Obj.StringObj(node.value);
   } else if (node instanceof AST.ExpressionStatement) {
     return evalNode(node.expression, env);
   } else if (node instanceof AST.IntegerLiteral) {
@@ -24,7 +26,6 @@ export function evalNode(node: AST.Node, env: Environment): Obj.Obj {
   } else if (node instanceof AST.InfixExpression) {
     const left = evalNode(node.left, env);
     if (isError(left)) return left;
-
     const right = evalNode(node.right, env);
     if (isError(right)) return right;
     return evalInfixExpression(node.operator, left, right);
